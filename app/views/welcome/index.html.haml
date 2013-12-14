@@ -1,0 +1,8 @@
+=render partial: "/layouts/header"
+%h1 Добро пожаловать в транслятор с языка Милан на язык С!
+.center
+	=image_tag("welcome.png", size: "750x270")
+	%p
+.center
+	<a href="/translations/new" class="btn btn-primary" role="button">Начать работу с транслятором</a>
+=render partial: "/layouts/footer"
