@@ -4,13 +4,13 @@ class ReservedkeywordsController < ApplicationController
 	end
 
 	def show
-		@reservedkeyword = Reservedkeyword.find(1)
+		unless @reservedkeyword = Reservedkeyword.find(1)
+			render "new"
+		end
 	end
 
 	def edit
-		unless @reservedkeyword = Reservedkeyword.where(id: 1).first
-		render "new"
-		end
+		@reservedkeyword = Reservedkeyword.where(id: 1).first
 	end
 
 	def update

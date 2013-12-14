@@ -126,13 +126,13 @@ PLATFORMS
 
 DEPENDENCIES
   bootstrap-sass
-  coffee-rails (~> 4.0.0)
+  coffee-rails
   haml-rails
   jbuilder (~> 1.2)
   jquery-rails
   pg
   rails (= 4.0.1)
-  sass-rails (~> 4.0.0)
+  sass-rails
   sdoc
   simple_form!
   turbolinks

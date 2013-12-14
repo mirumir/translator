@@ -6,15 +6,6 @@ gem 'rails', '4.0.1'
 # Use sqlite3 as the database for Active Record
 gem 'pg'
 
-# Use SCSS for stylesheets
-gem 'sass-rails', '~> 4.0.0'
-
-# Use Uglifier as compressor for JavaScript assets
-gem 'uglifier'
-
-# Use CoffeeScript for .js.coffee assets and views
-gem 'coffee-rails', '~> 4.0.0'
-
 # See https://github.com/sstephenson/execjs#readme for more supported runtimes
 # gem 'therubyracer', platforms: :ruby
 
@@ -37,6 +28,13 @@ gem 'bootstrap-sass'
 gem 'haml-rails'
 
 gem 'simple_form', git: 'git://github.com/plataformatec/simple_form'
+
+group :assets do
+  gem 'sass-rails'
+  gem 'coffee-rails'
+  gem 'uglifier'
+end
+
 
 
 # Use ActiveModel has_secure_password

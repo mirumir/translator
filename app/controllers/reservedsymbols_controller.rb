@@ -4,13 +4,13 @@ class ReservedsymbolsController < ApplicationController
 	end
 
 	def show
-		@reservedsymbol = Reservedsymbol.find(1)
+		unless @reservedsymbol = Reservedsymbol.find(1)
+			render "new"
+		end
 	end
 
 	def edit
-		unless @reservedsymbol = Reservedsymbol.where(id: 1).first
-		render "new"
-		end
+		@reservedsymbol = Reservedsymbol.where(id: 1).first
 	end
 
 	def update
