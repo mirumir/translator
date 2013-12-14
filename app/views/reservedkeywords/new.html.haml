@@ -1,7 +1,7 @@
 =render partial: "/layouts/header"
 .center
 	%h1 Создание ключевых слов
-	= simple_form_for @reservedkeyword do |f|
+	= simple_form_for Reservedkeyword.new do |f|
 		= f.text_area :keywords, size:'40x8'
 		%p
 		%p

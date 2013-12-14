@@ -1,10 +1,14 @@
 class ReservedkeywordsController < ApplicationController
 	def new
-		Reservedkeyword.new
+	end
+
+	def create
+		@reservedkeyword = Reservedkeyword.create(reservedkeyword_params)
+		render "show"
 	end
 
 	def show
-		unless @reservedkeyword = Reservedkeyword.find(1)
+		unless @reservedkeyword = Reservedkeyword.where(id: 1).first
 			render "new"
 		end
 	end

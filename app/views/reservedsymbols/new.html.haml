@@ -1,7 +1,7 @@
 =render partial: "/layouts/header"
 .center
 	%h1 Создание зарезервированных символов
-	= simple_form_for @reservedsymbol do |f|
+	= simple_form_for Reservedsymbol.new do |f|
 		= f.text_area :symbols, size:'40x8'
 		%p
 		%p

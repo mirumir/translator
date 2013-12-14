@@ -1,10 +1,14 @@
 class ReservedsymbolsController < ApplicationController
 	def new
-		Reservedsymbol.new
+	end
+
+	def create
+		@reservedsymbol = Reservedsymbol.create(reservedsymbol_params)
+		render "show"
 	end
 
 	def show
-		unless @reservedsymbol = Reservedsymbol.find(1)
+		unless @reservedsymbol = Reservedsymbol.where(id: 1).first
 			render "new"
 		end
 	end
