@@ -14,25 +14,23 @@ class SyntexesController < ApplicationController
 		@countV  = 0     #количество переменных
 		@typeExp = 0     #тип выражения
  
-		Program()	
-
-	  if !@Error.empty?
-        @error = Error.new
-        @error = Error.create(translation_id: @translation.id, discription: @Error[0])
-        @translation.update_attributes(outprogram: @Error[0])
-      elsif @currentLex == Lexem.where(translation_id: params[:translation_id]).count+1
-      	if !@rules.empty?
-        	@rules.each do |i|
-        	@rule = Syntex.new
-        	@rule = Syntex.create(translation_id: @translation.id, rule: i)
-        	@translation.update_attributes(outprogram: @outprogram)
+    if Program() && @currentLex == Lexem.where(translation_id: params[:translation_id]).count+1
+    	if !@rules.empty?
+      	@rules.each do |i|
+      	@rule = Syntex.new
+      	@rule = Syntex.create(translation_id: @translation.id, rule: i)
+      	@translation.update_attributes(outprogram: @outprogram)
         end
-    		end
-      else 
-        @translation.update_attributes(outprogram: "Синтаксическая ошибка")
-      end
-      redirect_to translation_path(@translation)
-  	end
+  		end
+    elsif !@Error.empty?
+      @error = Error.new
+      @error = Error.create(translation_id: @translation.id, discription: @Error[0])
+      @translation.update_attributes(outprogram: @Error[0])
+    else 
+      @translation.update_attributes(outprogram: "Синтаксическая ошибка")
+    end
+    redirect_to translation_path(@translation)
+  end
 
   	def show
   		@errors=Error.where(translation_id: params[:translation_id]).each
@@ -77,7 +75,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <объявление переменных>
   #============================================================================
   def Declaration()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="var"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="var"
       @rules<<"<объявление переменных>->var<список переменных>"
       @currentLex+=1
       if VarList()
@@ -98,9 +97,11 @@ class SyntexesController < ApplicationController
   def VarList()
     @rules<<"<список переменных>-><блок переменных>;<другой список переменных>"
     if Varbox()
-      if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==";"
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==";"
         @outprogram<<"\n"
-        if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
           return true
         end
         @currentLex+=1
@@ -125,12 +126,15 @@ class SyntexesController < ApplicationController
     pos=@outprogram.size
     if Namelist()
       @outprogram<<";"
-      if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==":"
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==":"
         @currentLex+=1
         if Type()
-          if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema.downcase=="integer"
+          if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+            Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema.downcase=="integer"
             @outprogram.insert(pos, "int ")
-          elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema.downcase=="string"
+          elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+            Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema.downcase=="string"
             @outprogram.insert(pos, "string ")
           end
           @outprogram<<"\n"
@@ -151,7 +155,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <другой список переменных>
   #============================================================================
   def spisok()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
       @rules<<"<другой список переменных>-><список переменных>"
       return true
     else
@@ -166,7 +171,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <список имен>
   #============================================================================
   def Namelist()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @rules<<"<список имен>->"+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema+"<другой список имен>"
       if @Declare.include?(Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema)
@@ -189,7 +195,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <другой список имен>
   #============================================================================
   def NameSp()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==","
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==","
       @outprogram<<", "
       @rules<<"<другой список имен>->,<список имен>"
       @currentLex+=1
@@ -208,13 +215,15 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <тип>
   #============================================================================ 
   def Type()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="integer"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="integer"
       setTypeI(@countV)
       @rules<<"<Тип>->integer"
       @countV=0
       @currentLex+=1
       return true
     elsif 
+      !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
       Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="string"
       setTypeS(@countV)
       @rules<<"<Тип>->string"
@@ -259,27 +268,28 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <тело программы>
   #============================================================================
   def ProgramBox()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
       @rules<<"<тело программы>->begin <последовательность операторов> end."
       @currentLex+=1
       if OperatorSequence()
-        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil?
-          if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="end"
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="end"
+          @currentLex+=1
+          if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+            Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="."
             @currentLex+=1
-            if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="."
-              @currentLex+=1
-              return true
-            else 
-              @Error<<"Следующая лексема должна быть '.'"
-              return false
-            end
+            return true
           else 
-            @Error<<"Следующая лексема должна быть 'end'"
+            @Error<<"Следующая лексема должна быть '.'"
             return false
           end
         else 
+          @Error<<"Следующая лексема должна быть 'end'"
           return false
         end
+      else 
+        return false
       end
     else 
       @Error<<"Следующая лексема должна быть 'begin'"
@@ -306,7 +316,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <другая послед. операторов>
   #============================================================================
   def Rest1()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==";"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==";"
       @currentLex+=1
       if OperatorSequence()
         return true
@@ -323,195 +334,213 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <оператор>
   #============================================================================
   def Operator()
-    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil?
-      if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
-        @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
-        type=CheckItem()
-        @rules<<"<оператор>->"+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema+":=<выражение>"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
+      @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
+      type=CheckItem()
+      @rules<<"<оператор>->"+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema+":=<выражение>"
+      @currentLex+=1
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==":="
+        @outprogram<<"="
         @currentLex+=1
-        if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==":="
+        if Expression()
+          @outprogram<<";"<<"\n"
+          if type!=@typeExp
+            @Error<<"Семантическая ошибка: несоответствие типов"
+          end
+          return true
+        else 
+          return false
+        end
+      else 
+        @Error<<"Следующая лексема должна быть ':='"
+        return false
+      end
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="if"
+      @outprogram<<"if("
+      @currentLex+=1
+      @rules<<"<оператор>->if <условие> then <оператор><иначе, оператор>"
+      if Condition()
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="then"
+          @outprogram<<")"<<"\n"
+          @currentLex+=1
+          if Operator()
+            if elseOp()
+              return true
+            else 
+              return false
+            end
+          else 
+            return false
+          end
+        else 
+          @Error<<"Следующая лексема должна быть 'then'"
+          return false
+        end
+      else 
+        return false
+      end
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="while"
+      @outprogram<<"while("
+      @currentLex+=1
+      @rules<<"<оператор>->while <условие> do <оператор>"
+      if Condition()
+        @outprogram<<") "
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="do"
+          @currentLex+=1
+          if Operator()
+            @outprogram<<"\n"
+            return true
+          else 
+            reurn false
+          end
+        else 
+          @Error<<"Следующая лексема должна быть 'do'"
+          return false
+        end
+      else 
+        return false
+      end 
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="for"
+      @outprogram<<"for("
+      @currentLex+=1
+      @rules<<"<оператор>->for "+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema+":= <выражение> to <выражение> do <оператор>"
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+       Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
+        @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase
+        id = @currentLex
+        @currentLex+=1
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==":="
           @outprogram<<"="
           @currentLex+=1
           if Expression()
-            @outprogram<<";"<<"\n"
-            if type!=@typeExp
-              @Error<<"Семантическая ошибка: несоответствие типов"
+            @outprogram<<";"
+            if @typeExp!=3
+              @Error<<"Семантическая ошибка: Выражение в цикле должно быть целого типа"
             end
-            return true
-          else 
+            if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+              Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="to"
+              @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: id).first.lexema.downcase<<"<"
+              @currentLex+=1
+              if Expression()
+                @outprogram<<";++"<<Lexem.where(translation_id: params[:translation_id], index_number: id).first.lexema.downcase
+                if @typeExp!=3
+                  @Error<<"Семантическая ошибка: Выражение в цикле должно быть целого типа"
+                end
+                if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+                  Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="do"
+                  @outprogram<<")"<<"\n"
+                  @currentLex+=1
+                  if Operator()
+                    @outprogram<<"\n"
+                    return true
+                  else 
+                    return false
+                  end
+                else 
+                  @Error<<"Следующая лексема должна быть 'do'"
+                  return false
+                end
+              else 
+                return false
+              end
+            else 
+               @Error<<"Следующая лексема должна быть 'to'"
+               return false
+             end
+           else 
             return false
           end
         else 
           @Error<<"Следующая лексема должна быть ':='"
           return false
         end
-      elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="if"
-        @outprogram<<"if("
+      else
+        @Error<<"Следующая лексема должна быть 'ид.'"
+        return false
+      end
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="write"
+      @outprogram<<"printf(\"" 
+      @currentLex+=1
+      @rules<<"<оператор>-> write( <выражение> )"
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="("
         @currentLex+=1
-        @rules<<"<оператор>->if <условие> then <оператор><иначе, оператор>"
-        if Condition()
-          if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="then"
-            @outprogram<<")"<<"\n"
-            @currentLex+=1
-            if Operator()
-              if elseOp()
-                return true
-              else 
-                return false
-              end
-            else 
-              return false
-            end
-          else 
-            @Error<<"Следующая лексема должна быть 'then'"
-            return false
-          end
-        else 
-          return false
-        end
-      elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="while"
-        @outprogram<<"while("
-        @currentLex+=1
-        @rules<<"<оператор>->while <условие> do <оператор>"
-        if Condition()
-          @outprogram<<") "
-          if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="do"
-            @currentLex+=1
-            if Operator()
-              @outprogram<<"\n"
-              return true
-            else 
-              reurn false
-            end
-          else 
-            @Error<<"Следующая лексема должна быть 'do'"
-            return false
-          end
-        else 
-          return false
-        end 
-      elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="for"
-        @outprogram<<"for("
-        @currentLex+=1
-        @rules<<"<оператор>->for "+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema+":= <выражение> to <выражение> do <оператор>"
-        if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
-          @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase
-          id = @currentLex
-          @currentLex+=1
-          if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==":="
-            @outprogram<<"="
-            @currentLex+=1
-            if Expression()
-              @outprogram<<";"
-              if @typeExp!=3
-                @Error<<"Семантическая ошибка: Выражение в цикле должно быть целого типа"
-              end
-              if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="to"
-                @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: id).first.lexema.downcase<<"<"
-                @currentLex+=1
-                if Expression()
-                  @outprogram<<";++"<<Lexem.where(translation_id: params[:translation_id], index_number: id).first.lexema.downcase
-                  if @typeExp!=3
-                    @Error<<"Семантическая ошибка: Выражение в цикле должно быть целого типа"
-                  end
-                  if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="do"
-                    @outprogram<<")"<<"\n"
-                    @currentLex+=1
-                    if Operator()
-                      @outprogram<<"\n"
-                      return true
-                    else 
-                      return false
-                    end
-                  else 
-                    @Error<<"Следующая лексема должна быть 'do'"
-                    return false
-                  end
-                else 
-                  return false
-                end
-              else 
-                 @Error<<"Следующая лексема должна быть 'to'"
-                 return false
-               end
-             else 
-              return false
-            end
-          else 
-            @Error<<"Следующая лексема должна быть ':='"
-            return false
-          end
-        else
-          @Error<<"Следующая лексема должна быть 'ид.'"
-          return false
-        end
-      elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="write"
-        @outprogram<<"printf(\"" 
-        @currentLex+=1
-        @rules<<"<оператор>-> write( <выражение> )"
-        if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="("
-          @currentLex+=1
-          if Expression()
-            if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==")"
-              @outprogram<<"\");\n"
-              @currentLex+=1
-              return true
-            else 
-              @Error<<"Следующая лексема должна быть ')'"
-              return false
-            end 
-          else
-            return false
-          end
-        else
-          @error<<"Следующая лексема должна быть '('"
-          return false
-        end
-      elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="read"
-        @outprogram<<"scanf"
-        @currentLex+=1
-        @rules<<"<оператор>->read( "+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex+1).first.lexema+" )"
-        if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="("
-          @outprogram<<"("
-          @currentLex+=1
-          if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
-            item=CheckItem()
-            if item == 3
-              @outprogram<<"\"%d\",&"
-            else 
-              @outprogram<<"\"%s\",&"
-            end
-            @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
-            @currentLex+=1
-            if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==")"
-              @outprogram<<");\n"
-              @currentLex+=1
-              return true
-            else 
-              @Error<<"Следующая лексема должна быть ')'"
-              return false
-            end
-          else 
-            @Error<<"Следующая лексема должна быть 'ид.'"
-            return false
-          end
-        else 
-          @Error<<"Следующая лексема должна быть '('"
-          return false
-        end
-      elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
-        @outprogram<<"{\n"
-        @currentLex+=1
-        @rules<<"<оператор>->begin <последовательность операторов> end"
-        if OperatorSequence()
-          if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="end"
-            @outprogram<<"}\n"
+        if Expression()
+          if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+            Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==")"
+            @outprogram<<"\");\n"
             @currentLex+=1
             return true
           else 
-            @Error<<"Следующая лексема должна быть 'end'"
+            @Error<<"Следующая лексема должна быть ')'"
+            return false
+          end 
+        else
+          return false
+        end
+      else
+        @error<<"Следующая лексема должна быть '('"
+        return false
+      end
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="read"
+      @outprogram<<"scanf"
+      @currentLex+=1
+      @rules<<"<оператор>->read( "+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex+1).first.lexema+" )"
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="("
+        @outprogram<<"("
+        @currentLex+=1
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
+          item=CheckItem()
+          if item == 3
+            @outprogram<<"\"%d\",&"
+          else 
+            @outprogram<<"\"%s\",&"
+          end
+          @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
+          @currentLex+=1
+          if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+           Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==")"
+            @outprogram<<");\n"
+            @currentLex+=1
+            return true
+          else 
+            @Error<<"Следующая лексема должна быть ')'"
             return false
           end
+        else 
+          @Error<<"Следующая лексема должна быть 'ид.'"
+          return false
+        end
+      else 
+        @Error<<"Следующая лексема должна быть '('"
+        return false
+      end
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="begin"
+      @outprogram<<"{\n"
+      @currentLex+=1
+      @rules<<"<оператор>->begin <последовательность операторов> end"
+      if OperatorSequence()
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="end"
+          @outprogram<<"}\n"
+          @currentLex+=1
+          return true
+        else 
+          @Error<<"Следующая лексема должна быть 'end'"
+          return false
         end
       end
     else
@@ -524,7 +553,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <иначе, оператор>
   #============================================================================
   def elseOp()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="else"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="else"
       @outprogram<<"else\n"
       @currentLex+=1
       @rules<<"<иначе, оператор>->else <оператор>"
@@ -578,7 +608,8 @@ class SyntexesController < ApplicationController
       @rules<<"<сравнение>-><выражение> отношение <выражение>"
       type1=@typeExp
       @typeExp=0
-      if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==21
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==21
         @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase
         @currentLex+=1
         if Expression()
@@ -604,12 +635,14 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <логический оператор>
   #============================================================================
   def LogicOperator()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="and"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="and"
       @outprogram<<" && "
       @currentLex+=1
       @rules<<"<логический оператор>->и"
       return true
-    elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="or"
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema.downcase=="or"
       @outprogram<<" || "
       @currentLex+=1
       @rules<<"<логический оператор>->или"
@@ -624,11 +657,14 @@ class SyntexesController < ApplicationController
   #  return идентификатор типа: 3, если integer; 4, если string
   #============================================================================
   def CheckItem()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==40
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==40
       return 3
-    elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==41
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==41
       return 4
-    elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
       if @TypeI.include?(Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema)
         return 3
       elsif @TypeS.include?(Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema)
@@ -682,7 +718,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <+-числ. выражение>
   #============================================================================
   def NumRest()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="+"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="+"
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @currentLex+=1
       @rules<<"<+-числ. выражение>->+<числ. выражение>"
@@ -691,7 +728,8 @@ class SyntexesController < ApplicationController
       else 
         return false
       end
-    elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="-"
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="-"
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @currentLex+=1
       @rules<<"<+-числ. выражение>->-<числ. выражение>"
@@ -726,7 +764,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <другой терминал>
   #============================================================================
   def termRest()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="*"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="*"
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @currentLex+=1
       @rules<<"<другой терминал>->*<числ. выражение>"
@@ -735,7 +774,8 @@ class SyntexesController < ApplicationController
       else 
         return false
       end
-    elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="/"
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="/"
       @outprogram<<"/"
       @currentLex+=1
       @rules<<"<другой терминал>->/<числ. выражение>"
@@ -754,24 +794,28 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <множитель>
   #============================================================================
   def Multiplier()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30 && CheckItem()==3
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30 && CheckItem()==3
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @typeExp=3
       @currentLex+=1
       @rules<<"<множитель>->"+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema
       return true
-    elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==40
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==40
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @typeExp=3
       @currentLex+=1
       @rules<<"<множитель>->"+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema
       return true
-    elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="("
+    elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="("
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @currentLex+=1
       @rules<<"<множитель>->( <числ. выражение> )"
       if NumExpression()
-        if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==")"
+        if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+          Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema==")"
           @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
           @currentLex+=1
           return true
@@ -808,7 +852,8 @@ class SyntexesController < ApplicationController
   #  проверка нетерминала <другое стр. выражение>
   #============================================================================
   def strRest()
-    if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="+"
+    if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+      Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema=="+"
       @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
       @currentLex+=1
       @rules<<"<другое стр. выражение>->+<стр. выражение>"
@@ -829,12 +874,14 @@ class SyntexesController < ApplicationController
   def StrTerm()
     if CheckItem()==4
       @typeExp=4
-      if Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
+      if !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==30
         @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
         @currentLex+=1
         @rules<<"<стр. терминал>->"+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema
         return true
-      elsif Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==41
+      elsif !Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.nil? && 
+        Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.first_index==41
         @outprogram<<Lexem.where(translation_id: params[:translation_id], index_number: @currentLex).first.lexema
         @currentLex+=1
         @rules<<"<стр. терминал>->"+Lexem.where(translation_id: params[:translation_id], index_number: @currentLex-1).first.lexema
